@@ -23,3 +23,12 @@ Nodes that do not upgrade cannot follow the chain past block 5,569.
 ## Also fixed
 
 - `-reindex` no longer aborts on the genesis block (BIP34/CSV/segwit are active from height 0).
+
+## Upgrading from 25.0.0
+
+- Stop the old node, replace `ordexcoind` / `ordexcoin-cli`, start again. The data directory and
+  descriptor wallets carry over.
+- **Port clash:** 31.x opens an extra local Tor port at *P2P port + 1*. If your RPC port is your
+  P2P port + 1 (for example `port=25173` and `rpcport=25174`), the node stops with
+  "Unable to bind to 127.0.0.1:25174". Add an explicit bind line to `ordexcoin.conf`, e.g.
+  `bind=0.0.0.0:25173`, and start again.
