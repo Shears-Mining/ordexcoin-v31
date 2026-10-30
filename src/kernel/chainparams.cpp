@@ -95,10 +95,11 @@ public:
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.enforce_BIP94 = false;
         consensus.fPowNoRetargeting = false;
-        // Per-block difficulty (ASERT) from block 5,550. The chain stalled at block 5,549 (28 Oct 2026):
+        // Per-block difficulty (ASERT) from block 5,570. The chain stalled at block 5,549 (28 Oct 2026):
         // a short burst of hashrate pushed the 12-block retarget to ~1.98 billion and the remaining
-        // miners could not reach the next adjustment. Block 5,550 restarts at ~250,000.
-        consensus.nASERTActivationHeight = 5550;
+        // miners could not reach the next adjustment; a hopping pool then mined on and off at that level.
+        // Block 5,570 restarts at ~250,000.
+        consensus.nASERTActivationHeight = 5570;
         consensus.nASERTStartBits = 0x1a431b9b; // difficulty ~250,000
         consensus.nASERTHalfLife = 2 * 60 * 60; // 2 hours
         //consensus.nRuleChangeActivationThreshold = 11;
