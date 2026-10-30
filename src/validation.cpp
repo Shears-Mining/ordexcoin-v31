@@ -4166,6 +4166,12 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, BlockValidatio
  */
 static bool ContextualCheckBlock(const CBlock& block, BlockValidationState& state, const ChainstateManager& chainman, const CBlockIndex* pindexPrev)
 {
+    // OrdexCoin activates BIP34, CSV and segwit at height 0, so every check below already applies
+    // to the genesis block, which has no previous block (an assert would abort -reindex). The
+    // genesis block is fixed in the chain parameters and never checked this way during a normal
+    // sync, so skip it here.
+    if (pindexPrev == nullptr) return true;
+
     const int nHeight = pindexPrev == nullptr ? 0 : pindexPrev->nHeight + 1;
 
     // Enforce BIP113 (Median Time Past).

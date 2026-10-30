@@ -95,9 +95,12 @@ public:
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.enforce_BIP94 = false;
         consensus.fPowNoRetargeting = false;
-        consensus.nASERTActivationHeight = std::numeric_limits<int>::max();
-        consensus.nASERTStartBits = 0;
-        consensus.nASERTHalfLife = 60 * 60; // 1 hour
+        // Per-block difficulty (ASERT) from block 5,550. The chain stalled at block 5,549 (28 Oct 2026):
+        // a short burst of hashrate pushed the 12-block retarget to ~1.98 billion and the remaining
+        // miners could not reach the next adjustment. Block 5,550 restarts at ~250,000.
+        consensus.nASERTActivationHeight = 5550;
+        consensus.nASERTStartBits = 0x1a431b9b; // difficulty ~250,000
+        consensus.nASERTHalfLife = 2 * 60 * 60; // 2 hours
         //consensus.nRuleChangeActivationThreshold = 11;
         //consensus.nMinerConfirmationWindow = 12;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -503,6 +506,10 @@ public:
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.enforce_BIP94 = opts.enforce_bip94;
         consensus.fPowNoRetargeting = true;
+        // ASERT from block 200 on regtest, so it can be tested locally (anchor leaves 17 bits of headroom).
+        consensus.nASERTActivationHeight = 200;
+        consensus.nASERTStartBits = 0x1e0fffff;
+        consensus.nASERTHalfLife = 2 * 60 * 60;
 
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 0;

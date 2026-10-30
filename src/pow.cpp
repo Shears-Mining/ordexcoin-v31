@@ -21,6 +21,9 @@ arith_uint256 CalculateASERT(const arith_uint256& refTarget,
 {
     assert(refTarget > 0 && refTarget <= powLimit);
     assert(powLimit > 0);
+    // refTarget * factor (factor < 2^17) must fit in 256 bits; the reference is always the fixed
+    // anchor target (mainnet ~2^214), so this only depends on nASERTStartBits.
+    assert(refTarget.bits() <= 256 - 17);
     assert(nHeightDiff >= 0);
     assert(llabs(nTimeDiff - nPowTargetSpacing * nHeightDiff) < (1ll << (63 - 16)));
 
@@ -67,45 +70,39 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     const int nNextHeight = pindexLast->nHeight + 1;
 
-    if (params.IsASERTActive(nNextHeight) && !params.fPowNoRetargeting) {
+    // OrdexCoin: per-block difficulty (ASERT) from nASERTActivationHeight.
+    if (params.IsASERTActive(nNextHeight)) {
         const int anchorHeight = params.nASERTActivationHeight;
 
         if (nNextHeight == anchorHeight) {
+            // The anchor block restarts at a fixed, reachable difficulty.
             if (params.nASERTStartBits != 0) {
                 return params.nASERTStartBits;
             }
             return pindexLast->nBits;
         }
 
-        if (nNextHeight > anchorHeight) {
-            const CBlockIndex* pAnchorParent = pindexLast->GetAncestor(anchorHeight - 1);
-            if (!pAnchorParent) {
-                return nProofOfWorkLimit;
-            }
+        // Measured from the anchor block itself (not its parent), so the block after the anchor
+        // starts at the anchor difficulty however long the chain was stalled before the anchor.
+        const CBlockIndex* pAnchor = pindexLast->GetAncestor(anchorHeight);
+        assert(pAnchor != nullptr);
 
-            arith_uint256 refTarget;
-            if (params.nASERTStartBits != 0) {
-                refTarget.SetCompact(params.nASERTStartBits);
-            } else {
-                refTarget.SetCompact(pAnchorParent->nBits);
-            }
+        arith_uint256 refTarget;
+        refTarget.SetCompact(pAnchor->nBits);
 
-            const int64_t nTimeDiff = pindexLast->GetBlockTime() - pAnchorParent->GetBlockTime();
-            const int64_t nHeightDiff = pindexLast->nHeight - anchorHeight;
+        const int64_t nTimeDiff = pindexLast->GetBlockTime() - pAnchor->GetBlockTime() + params.nPowTargetSpacing;
+        const int64_t nHeightDiff = pindexLast->nHeight - anchorHeight;
 
-            arith_uint256 nextTarget = CalculateASERT(
-                refTarget,
-                params.nPowTargetSpacing,
-                nTimeDiff,
-                nHeightDiff,
-                UintToArith256(params.powLimit),
-                params.nASERTHalfLife);
+        arith_uint256 nextTarget = CalculateASERT(
+            refTarget,
+            params.nPowTargetSpacing,
+            nTimeDiff,
+            nHeightDiff,
+            UintToArith256(params.powLimit),
+            params.nASERTHalfLife);
 
-            return nextTarget.GetCompact();
-        }
+        return nextTarget.GetCompact();
     }
-
-
 
     // Only change once per difficulty adjustment interval
     if ((pindexLast->nHeight+1) % params.DifficultyAdjustmentInterval() != 0)
